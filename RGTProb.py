@@ -2,8 +2,8 @@
 #under the direction of Prof. Filippo Di Santo, University of Pisa, Department of Mathematics
 
 
-print('''Welcome to TreeCalc, the gene tree probability calculator. This tool will allow you to calculate Ranked Gene Trees
-         probabilities given a species tree in multiple formats. You can modify the program as you like, but please always mention the
+print('''Welcome to RGTProb, the gene tree probability calculator. This tool will allow you to calculate Ranked Gene Tree
+         probabilities conditioning on a species tree in multiple formats. You can modify the program as you like, but please always mention the
          original project. If you develop something interesting please let us know, so that we can add it to our software and distribute
          your content to other users.''')
 
@@ -18,41 +18,41 @@ topologia=''
 nodi=''
 dt=dict()
 l=dict()
-Inp4='000'
+IntervalMode='000'
 S_specie=''
 
-Inp1=input('Select the desired input format: type 1 for standard format or 2 for newick format\n')
-Inp2=input('Select how to submit inputs: type 1 to submit files or 2 to type trees manually\n')
-N=int(input('Select the number of species\n'))
+InputFormat=input('Select the desired input format: type 1 for standard format or 2 for newick format\n') #Inp1
+InputType=input('Select how to submit inputs: type 1 to submit files or 2 to type trees manually\n') #Inp2
+NumSpec=int(input('Select the number of species\n'))
 
 #Functions for time models
 
-def Time_fmodel1(par):
+def Time_Yule(par):
    global dt, N
-   for i in range(N-2):
+   for i in range(NumSpec-2):
       dt[i+2]=1/((i+2)*par)
    return dt
 
 ###
 
-if Inp1=='1': #standard format
-   Inp4=input("Select the desired time interval mode: type 1 for Yule's models, 2 to insert time intervals manually or 3 for a polynomial output (readable by Wolfram Mathematica)\n")
-   if Inp4=='1':#not finished, see Time functions
-      a=input('Inser the parameter for the speciation rate\n')
-      Time_fmodel1(float(a))
-   elif Inp4=='2': # insert intervals
+if InputFormat=='1': #standard format
+   IntervalMode=input("Select the desired time interval mode: type 1 for Yule's model, 2 to insert time intervals manually or 3 for a polynomial output (readable by Wolfram Mathematica)\n")#Inp4
+   if IntervalMode=='1':#creates a standard set of times according to the function Time_Yule
+      SpecRatePar=input('Insert the parameter for the speciation rate\n')
+      Time_Yule(float(SpecRatePar))
+   elif IntervalMode=='2': # insert intervals
       Inp5=input('Write the desired time intervals from T(2) to T(N-1) only separated by a comma\n')
       times=Inp5.split(',')
       for j in range (N-2):
          n=j+2
          dt[n]=float(times[j])
-   elif Inp4=='3': # polynomials
+   elif IntervalMode=='3': # polynomials
       pass
    else:
       print('ERROR: invalid input')
 
 
-if Inp2=='1': #process files
+if InputType=='1': #process files
    fileST=input('Type the name of the file containing STs as "filename.txt"\n')
    openST=open(fileST)
    dataST=[]
@@ -66,7 +66,8 @@ if Inp2=='1': #process files
       gt=gt.strip()
       dataGT.append(gt)
 
-if Inp2=='2': #manually inserted trees
+if InputType=='2': #Allows for the manual insertion of GTs and STs
+   print('Please write trees without blank spaces and characters that are not letters, numbers parenthesis: an example of correct typing is ((AB)2C)1')
    speciestree=input('Type the ST:\n')
    dataST=[speciestree]
    genetree=input('Type the GT:\n')
@@ -74,9 +75,10 @@ if Inp2=='2': #manually inserted trees
 
 #now we have our data in a way that allows us to use only one script for both cases. Now the desired output format must be chosen
 
-Inp6=input('''Choose the desired output format: type 1 for desktop print (might not work if it has too much to print),
-             2 for 1 file for each ST-GT couple or 3 for 1 file for each ST\n''')
-Inp7=input('Type 1 if you want only total GT|ST probabilities, 2 if you want also GT&RH|ST probabilities\n')
+OutputFormat=input('''Choose the desired output format: type 1 for desktop print (this might not work if it has too much to print),
+             2 for 1 file for each ST-GT couple or 3 for 1 file for each ST.\n''') #notare che potrebbe funzionare bene in coll diretto a mathematica solo il 2
+#inp6
+OutputProbabs=input('Type 1 if you want only total GT|ST probabilities, 2 if you want also GT&RH|ST probabilities\n')#input7
 
 #Now all necessary information has been collected, we can write functions and the rest of the program
 
@@ -138,7 +140,7 @@ def newick_analysis(ST): #newick processing, it extrapolates the dictionary of t
 def trovaMRH(ST,GT):#its inputs are a RST and a RGT. the function returns the MRH of th RGT in the RST as a list
    global N,Top,gene,topologia,nodi,S_specie,Inp1
    #this function only uses the function lettura
-   if Inp1=='1':	   
+   if InputFormat=='1':	   
       specie=lettura(ST,S_specie)
    elif Inp1=='2':
       specie=newick_analysis(ST)
@@ -239,7 +241,7 @@ def probab(ST,GT,RH): #Input: ST, GT and a RH. Output: P(G and RH|ST). Uses trov
    m=trovam(RH)
    P[N-1]=1#it is necessarily so
    nums=list(range(N-1))
-   if Inp1=='1' and Inp4=='3':
+   if InputFormat=='1' and IntervalMode=='3':
       tau=dict()
       for t in range(N-2):
          tau[t+2]='T['+str(t+2)+']'

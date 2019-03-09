@@ -41,8 +41,8 @@ if InputFormat=='1': #standard format
       SpecRatePar=input('Insert the parameter for the speciation rate\n')
       Time_Yule(float(SpecRatePar))
    elif IntervalMode=='2': # insert intervals
-      Inp5=input('Write the desired time intervals from T(2) to T(N-1) only separated by a comma\n')
-      times=Inp5.split(',')
+      times_raw=input('Write the desired time intervals from T(2) to T(N-1) only separated by a comma\n')
+      times=times_raw.split(',')
       for j in range (N-2):
          n=j+2
          dt[n]=float(times[j])

@@ -1,5 +1,5 @@
 #Project developed by Guido Narduzzi and Pasquale Miglionico, ordinary students of Biology at the Scuola Normale Superiore of Pisa
-#under the direction of Prof. Filippo Di Santo, University of Pisa, Department of Mathematics
+#under the direction of Dr. Filippo Di Santo, University of Pisa, Department of Mathematics
 
 
 print('''Welcome to RGTProb, the gene tree probability calculator. This tool will allow you to calculate Ranked Gene Tree
@@ -12,40 +12,42 @@ print('''Welcome to RGTProb, the gene tree probability calculator. This tool wil
 from decimal import *
 import math
 
+#Initialization of useful variables
+
 Top=''
 gene=''
-topologia=''
-nodi=''
-dt=dict()
+topology=''
+nodes=''
+timeDict=dict()
 l=dict()
 IntervalMode='000'
-S_specie=''
+S_species=''
 
-InputFormat=input('Select the desired input format: type 1 for standard format or 2 for newick format\n') #Inp1
-InputType=input('Select how to submit inputs: type 1 to submit files or 2 to type trees manually\n') #Inp2
+InputFormat=input('Select the desired input format: type 1 for standard format or 2 for newick format\n')
+InputType=input('Select how to submit inputs: type 1 to submit files or 2 to type trees manually\n')
 NumSpec=int(input('Select the number of species\n'))
 
 #Functions for time models
 
 def Time_Yule(par):
-   global dt, N
+   global timeDict, NumSpec
    for i in range(NumSpec-2):
-      dt[i+2]=1/((i+2)*par)
-   return dt
+      timeDict[i+2]=1/((i+2)*par)
+   return timeDict
 
 ###
 
 if InputFormat=='1': #standard format
-   IntervalMode=input("Select the desired time interval mode: type 1 for Yule's model, 2 to insert time intervals manually or 3 for a polynomial output (readable by Wolfram Mathematica)\n")#Inp4
+   IntervalMode=input("Select the desired time interval mode: type 1 for Yule's model, 2 to insert time intervals manually or 3 for a polynomial output (readable by Wolfram Mathematica)\n")
    if IntervalMode=='1':#creates a standard set of times according to the function Time_Yule
       SpecRatePar=input('Insert the parameter for the speciation rate\n')
       Time_Yule(float(SpecRatePar))
    elif IntervalMode=='2': # insert intervals
       times_raw=input('Write the desired time intervals from T(2) to T(N-1) only separated by a comma\n')
       times=times_raw.split(',')
-      for j in range (N-2):
+      for j in range (NumSpec-2):
          n=j+2
-         dt[n]=float(times[j])
+         timeDict[n]=float(times[j])
    elif IntervalMode=='3': # polynomials
       pass
    else:
@@ -77,8 +79,7 @@ if InputType=='2': #Allows for the manual insertion of GTs and STs
 
 OutputFormat=input('''Choose the desired output format: type 1 for desktop print (this might not work if it has too much to print),
              2 for 1 file for each ST-GT couple or 3 for 1 file for each ST.\n''') #notare che potrebbe funzionare bene in coll diretto a mathematica solo il 2
-#inp6
-OutputProbabs=input('Type 1 if you want only total GT|ST probabilities, 2 if you want also GT&RH|ST probabilities\n')#input7
+OutputProbabs=input('Type 1 if you want only total GT|ST probabilities, 2 if you want also GT&RH|ST probabilities\n')
 
 #Now all necessary information has been collected, we can write functions and the rest of the program
 
@@ -94,7 +95,7 @@ def T_calc(Tree): #calculates a vector indicating the number of nodes which sepa
 	return T
 
 def newick_analysis(ST): #newick processing, it extrapolates the dictionary of times and the matrix M
-	global dt
+	global timeDict
 	K=[]
 	Val=[]
 	tempi=set()
@@ -110,14 +111,14 @@ def newick_analysis(ST): #newick processing, it extrapolates the dictionary of t
 			Val.append(Decimal(stringa))
 		else:
 			Val.append(0)
-	for i in range(N-1):
+	for i in range(NumSpec-1):
 		K.append([])
-		for j in range(N-1-i):
-			n=min(T[S_specie[i]:S_specie[j+i+1]])
-			h=S_specie[i]+1
+		for j in range(NumSpec-1-i):
+			n=min(T[S_species[i]:S_species[j+i+1]])
+			h=S_species[i]+1
 			t=Val[h]
-			for k in range(T[S_specie[i]]-n):
-				while T[h]!=T[S_specie[i]]-k-1:
+			for k in range(T[S_species[i]]-n):
+				while T[h]!=T[S_species[i]]-k-1:
 					h+=1
 				h+=1
 				t=t+Val[h]
@@ -126,11 +127,11 @@ def newick_analysis(ST): #newick processing, it extrapolates the dictionary of t
 	tem=list(tempi)
 	tem.sort(reverse=True)
 	tem.append(0)
-	dt=dict()
-	for i in range(N-1):
+	timeDict=dict()
+	for i in range(NumSpec-1):
 		M.append([])
-		dt[i+2]=float(tem[i]-tem[i+1])
-		for j in range(N-1-i):
+		timeDict[i+2]=float(tem[i]-tem[i+1])
+		for j in range(NumSpec-1-i):
 			h=0
 			while tem[h]!=K[i][j]:
 				h+=1
@@ -138,38 +139,38 @@ def newick_analysis(ST): #newick processing, it extrapolates the dictionary of t
 	return M
 
 def trovaMRH(ST,GT):#its inputs are a RST and a RGT. the function returns the MRH of th RGT in the RST as a list
-   global N,Top,gene,topologia,nodi,S_specie,Inp1
-   #this function only uses the function lettura
+   global NumSpec,Top,gene,topology,nodes,S_species,InputFormat
+   #this function only uses the function read
    if InputFormat=='1':	   
-      specie=lettura(ST,S_specie)
-   elif Inp1=='2':
+      specie=read(ST,S_species)
+   elif InputFormat=='2':
       specie=newick_analysis(ST)
-   S_gene=[] #list containing the position of letters in GT in a way s.t. GT[S_gene[i]]=ST[S_specie[i]]
-   for i in range(N):
+   S_gene=[] #list containing the position of letters in GT in a way s.t. GT[S_gene[i]]=ST[S_species[i]]
+   for i in range(NumSpec):
       n=0
-      while GT[n]!=ST[S_specie[i]]:
+      while GT[n]!=ST[S_species[i]]:
          n+=1
       S_gene.append(n)
-   gene=lettura(GT,S_gene)
-   #now we calculate the MRH. L, Top, topologia, nodi are created at the same time
+   gene=read(GT,S_gene)
+   #now we calculate the MRH. L, Top, topology, nodes are created at the same time
    L=[] #L[i] will be the time of the (i+1)th node of the gene tree
-   topologia=[[]] #topologia[i][j] is the branch containing the (i+1) phyletic line during the (j+1)^th time interval
+   topology=[[]] #topology[i][j] is the branch containing the (i+1) phyletic line during the (j+1)^th time interval
    Top=[]
-   nodi=[]
-   for i in range(N-1):
+   nodes=[]
+   for i in range(NumSpec-1):
       L.append([])
-      topologia.append([])
-      topologia[0].append(1)
-   for i in range(N-1):
-      for j in range(N-i-1):
+      topology.append([])
+      topology[0].append(1)
+   for i in range(NumSpec-1):
+      for j in range(NumSpec-i-1):
          L[gene[i][j]-1].append(specie[i][j])
       Top.append([])
       n=0
-      for j in range(N-1):
+      for j in range(NumSpec-1):
          if specie[i][0]>j:
-            topologia[i+1].append(topologia[i][j])
+            topology[i+1].append(topology[i][j])
          else:
-            topologia[i+1].append(topologia[i][j]+1)
+            topology[i+1].append(topology[i][j]+1)
          if specie[j][0]==i+1:
             n+=1
             Top[i].append(n)
@@ -180,19 +181,19 @@ def trovaMRH(ST,GT):#its inputs are a RST and a RGT. the function returns the MR
       k=0
       while i+1 not in gene[k]:
          k+=1
-      nodi.append(k)
-   MRH=[L[N-2][0]]
-   for i in range(N-2):
-      MRH.append(min(MRH[i],min(L[N-3-i])))
+      nodes.append(k)
+   MRH=[L[NumSpec-2][0]]
+   for i in range(NumSpec-2):
+      MRH.append(min(MRH[i],min(L[NumSpec-3-i])))
    MRH.sort()
    return MRH
 
-def lettura(stringa,S):
+def read(stringa,S):
    T=T_calc(stringa)
    M=[]
-   for i in range(N-1):
+   for i in range(NumSpec-1):
       M.append([])
-      for j in range(N-1-i):
+      for j in range(NumSpec-1-i):
          if S[i]<S[i+j+1]:
             n=min(T[S[i]:S[j+i+1]])
          else:
@@ -220,9 +221,9 @@ def aggiorna_rh(ins,Z=1000): #Input: a list of RHs. Output: a list of RHs which 
    #input with valid values
    d=[]
    for chiave in ins:
-      N=len(chiave)
+      NumSpec=len(chiave)
       break
-   T=min(N+1,Z)
+   T=min(NumSpec+1,Z)
    for chiave in ins:
       n=0
       M=max(chiave)
@@ -235,18 +236,18 @@ def aggiorna_rh(ins,Z=1000): #Input: a list of RHs. Output: a list of RHs which 
    return d
 
 def probab(ST,GT,RH): #Input: ST, GT and a RH. Output: P(G and RH|ST). Uses trovam, vall
-   global l, dt, N, Inp1, Inp4
+   global l, timeDict, NumSpec, InputFormat, IntervalMode
    calcoLambda(RH)
    P=dict()
    m=trovam(RH)
-   P[N-1]=1#it is necessarily so
-   nums=list(range(N-1))
+   P[NumSpec-1]=1#it is necessarily so
+   nums=list(range(NumSpec-1))
    if InputFormat=='1' and IntervalMode=='3':
       tau=dict()
-      for t in range(N-2):
+      for t in range(NumSpec-2):
          tau[t+2]='T['+str(t+2)+']'
       polystr=''
-      P[N-1]='1'
+      P[NumSpec-1]='1'
       for i in nums[::-1]:
          if i==0:
             break
@@ -256,7 +257,7 @@ def probab(ST,GT,RH): #Input: ST, GT and a RH. Output: P(G and RH|ST). Uses trov
          summ=summ[0:len(summ)-1]
          summ+=')'
          P[i]=P[i+1]+'*'+summ
-         if i==1: #it stops at the P from s(N-1) to s(1), because P in tau_1 is taken care of in the next part of the function
+         if i==1: #it stops at the P from s(NumSpec-1) to s(1), because P in tau_1 is taken care of in the next part of the function
             break
       P[0]=P[1]+'*'+'(2)^('+str(m[1])+')'+'/('+str(m[1]+1)+'!*'+str(m[1])+'!)'
    else:
@@ -265,26 +266,26 @@ def probab(ST,GT,RH): #Input: ST, GT and a RH. Output: P(G and RH|ST). Uses trov
             break
          summ=0
          for j in range(m[i+1]+1):
-            summ+=(num(RH,i,j))**(dt[i+1])*den(RH,i,j)
+            summ+=(num(RH,i,j))**(timeDict[i+1])*den(RH,i,j)
          P[i]=P[i+1]*summ
-         if i==1: #it stops at the P from s(N-1) to s(1), because P in tau_1 is taken care of in the next part of the function
+         if i==1: #it stops at the P from s(NumSpec-1) to s(1), because P in tau_1 is taken care of in the next part of the function
             break
       P[0]=P[1]*2**(m[1])/(math.factorial(m[1]+1)*math.factorial(m[1]))
    return(P[0])
 
 def den(rh,i,j): #uses trovam, calcoLambda
-   global l, Inp4
+   global l, IntervalMode
    m=trovam(rh)
    d1=1
-   if Inp4=='3':
+   if IntervalMode=='3':
       d1='('
    for k in range(m[i+1]+1):
       if k!=j:
-         if Inp4=='3':
+         if IntervalMode=='3':
             d1+=str(l[(i+1,k)]-l[(i+1,j)])+'*'
          else:
             d1=d1*(l[(i+1,k)]-l[(i+1,j)])
-   if Inp4=='3':
+   if IntervalMode=='3':
       if d1=='(':
          den='1'
       else:
@@ -296,8 +297,8 @@ def den(rh,i,j): #uses trovam, calcoLambda
    return den
 
 def num(rh,i,j):
-   global l, Inp4
-   if Inp4=='3':
+   global l, IntervalMode
+   if IntervalMode=='3':
       num='Exp['+str(-l[(i+1,j)])
    else:
       num=math.exp(-l[(i+1,j)])
@@ -322,59 +323,59 @@ def binomiale(n,k): #calculates the binomial n over k
       return 0
    return math.factorial(n)//(math.factorial(k)*math.factorial(n-k))
 
-def valori(RH): #Output: a dictionary of k[ijz], it is useful to define m[N]=0 and k(N,0,z)=1
-   global N,Top,gene,topologia,nodi
+def valori(RH): #Output: a dictionary of k[ijz], it is useful to define m[NumSpec]=0 and k(NumSpec,0,z)=1
+   global NumSpec,Top,gene,topology,nodes
    Pos=[] #a matrix s.t. Pos[i][j] is the branch in which rhe (j+1)^th coalescence happens in tau_(i+1)
-   for i in range(N-1):
+   for i in range(NumSpec-1):
       Pos.append([])
-      Pos[RH[i]-1].append(topologia[nodi[i]][RH[i]-1])
+      Pos[RH[i]-1].append(topology[nodes[i]][RH[i]-1])
    m=[]
    k=dict()
-   for i in range(N):
+   for i in range(NumSpec):
       m.append(RH.count(i+1))
-      k[(N,0,i+1)]=1
-   for i in range(N-1):
-      for z in range (N-1-i):
-         k[(N-1-i,m[N-2-i],z+1)]=0
-      for j in range(m[N-2-i]+1):
+      k[(NumSpec,0,i+1)]=1
+   for i in range(NumSpec-1):
+      for z in range (NumSpec-1-i):
+         k[(NumSpec-1-i,m[NumSpec-2-i],z+1)]=0
+      for j in range(m[NumSpec-2-i]+1):
          if j==0:
-            for z in range(N-i):
-               k[(N-1-i,m[N-2-i],Top[N-2-i][z])]+=k[(N-i,0,z+1)]
+            for z in range(NumSpec-i):
+               k[(NumSpec-1-i,m[NumSpec-2-i],Top[NumSpec-2-i][z])]+=k[(NumSpec-i,0,z+1)]
          else:
-            for z in range(N-1-i):
-               if z+1==Pos[N-2-i][m[N-2-i]-j]:
-                  k[(N-1-i,m[N-2-i]-j,z+1)]=k[(N-1-i,m[N-2-i]-j+1,z+1)]-1
+            for z in range(NumSpec-1-i):
+               if z+1==Pos[NumSpec-2-i][m[NumSpec-2-i]-j]:
+                  k[(NumSpec-1-i,m[NumSpec-2-i]-j,z+1)]=k[(NumSpec-1-i,m[NumSpec-2-i]-j+1,z+1)]-1
                else:
-                  k[(N-1-i,m[N-2-i]-j,z+1)]=k[(N-1-i,m[N-2-i]-j+1,z+1)]
-   for i in range(N):
-      del(k[(N,0,i+1)])
+                  k[(NumSpec-1-i,m[NumSpec-2-i]-j,z+1)]=k[(NumSpec-1-i,m[NumSpec-2-i]-j+1,z+1)]
+   for i in range(NumSpec):
+      del(k[(NumSpec,0,i+1)])
    return k
 
 def S_calc(st): #finds the positions of the species names in the input string
-	global S_specie
-	S_specie=[]
+	global S_species
+	S_species=[]
 	for i in range(len(st)):
 		if st[i] not in ['1','2','3','4','5','6','7','8','9','0','.',':',',','(',')']:
-			S_specie.append(i)
+			S_species.append(i)
 	return
 
-if Inp6=='1': #at the moment it works with standard format, symbolic must be implemented, newick corrected
+if OutputFormat=='1': #at the moment it works with standard format, symbolic must be implemented, newick corrected
    for st in dataST:
       S_calc(st)
-      if Inp1=='2':
-         newick_analysis(st) #così abbiamo dt e M
-      strdt='('
-      if Inp4!='3':
-         strdt+=str(dt[2])
-         for i in range(N-3):
-            strdt+=','+str(dt[i+3])
-         strdt+=')'
-      if strdt!='(':
-         print('Times= '+strdt)
+      if InputFormat=='2':
+         newick_analysis(st) #così abbiamo timeDict e M
+      strTimeDict='('
+      if IntervalMode!='3':
+         strTimeDict+=str(timeDict[2])
+         for i in range(NumSpec-3):
+            strTimeDict+=','+str(timeDict[i+3])
+         strTimeDict+=')'
+      if strTimeDict!='(':
+         print('Times= '+strTimeDict)
       for gt in dataGT:
          MRH=trovaMRH(st,gt)
          rhlist=calcolarh(MRH)
-         if Inp4=='3':
+         if IntervalMode=='3':
             pt=''
          else:
             pt=0
@@ -382,111 +383,111 @@ if Inp6=='1': #at the moment it works with standard format, symbolic must be imp
          print('ST= '+st+' GT= '+gt)
          for rh in rhlist:
             p=probab(st,gt,rh)
-            if Inp4=='3':
+            if IntervalMode=='3':
                pt+='+'+p
             else:
                pt+=p
             probs+=str(rh)+': '+str(p)+'; '
-         if Inp4=='3':
+         if IntervalMode=='3':
             pt=pt[1:]
          print('P(GT|ST)= '+str(pt))
-         if Inp7=='2':
+         if OutputProbab=='2':
             print(probs)
          print()
       print()
 
-if Inp6=='2': #for each gt-st couple
+if OutputFormat=='2': #for each gt-st couple
    for st in dataST:
       S_calc(st)
-      if Inp1=='2':
-         newick_analysis(st) #così abbiamo dt
-      strdt=''
-      if Inp4!='3':
-         strdt+='('
-         strdt+=str(dt[2])
-         for i in range(N-3):
-            strdt+=','+str(dt[i+3])
-         strdt+=')'
+      if InputFormat=='2':
+         newick_analysis(st) #così abbiamo timeDict
+      strTimeDict=''
+      if IntervalMode!='3':
+         strTimeDict+='('
+         strTimeDict+=str(timeDict[2])
+         for i in range(NumSpec-3):
+            strTimeDict+=','+str(timeDict[i+3])
+         strTimeDict+=')'
       for gt in dataGT:
          MRH=trovaMRH(st,gt)
          rhlist=calcolarh(MRH)
-         if Inp1=='1':
-            filename=st+'_'+gt+'_'+strdt+'_prob.txt'
+         if InputFormat=='1':
+            filename=st+'_'+gt+'_'+strTimeDict+'_prob.txt'
          else:
             stname=''
             for letter in st:
                if letter not in '0123456789,.:':
                   stname+=letter
                   stname+='newick'
-            filename=stname+'_'+gt+'_'+strdt+'_prob.txt'
+            filename=stname+'_'+gt+'_'+strTimeDict+'_prob.txt'
          fout=open(filename, 'w')
          fout.write('GT='+gt+'\nST='+st+'\n')
-         if Inp4!='3':
-            fout.write('Times='+strdt+'\n')
+         if IntervalMode!='3':
+            fout.write('Times='+strTimeDict+'\n')
             pt=0
-         if Inp4=='3':
+         if IntervalMode=='3':
             pt=''
          probs=''
          for rh in rhlist:
             p=probab(st,gt,rh)
-            if Inp4=='3':
+            if IntervalMode=='3':
                pt+='+'+p
             else:
                pt+=p
             probs+=str(rh)+': '+str(p)+'\n'
-         if Inp4=='3':
+         if IntervalMode=='3':
             pt=pt[1:]
          fout.write('P(GT|ST)= '+str(pt)+'\n')
-         if Inp7=="2":
+         if OutputProbab=="2":
             fout.write(probs)
          fout.close()
          
-if Inp6=='3':
+if OutputFormat=='3':
    for st in dataST:
       S_calc(st)
-      if Inp1=='2':
+      if InputFormat=='2':
          newick_analysis(st)
-      strdt=''
-      if Inp4!='3':
-         strdt+='('
-         strdt+=str(dt[2])
-         for i in range(N-3):
-            strdt+=','+str(dt[i+3])
-         strdt+=')'
-      if Inp1=='1':
-         filename=st+'_'+strdt+'_prob.txt'
+      strTimeDict=''
+      if IntervalMode!='3':
+         strTimeDict+='('
+         strTimeDict+=str(timeDict[2])
+         for i in range(NumSpec-3):
+            strTimeDict+=','+str(timeDict[i+3])
+         strTimeDict+=')'
+      if InputFormat=='1':
+         filename=st+'_'+strTimeDict+'_prob.txt'
       else:
          stname=''
          for letter in st:
             if letter not in '0123456789,.:':
                stname+=letter
                stname+='newick'
-         filename=stname+'_'+strdt+'_prob.txt'
+         filename=stname+'_'+strTimeDict+'_prob.txt'
       fout=open(filename, 'w')
       fout.write('ST= '+st+'\n')
-      if Inp4!='3':
-         fout.write('Times= '+strdt+'\n\n')
+      if IntervalMode!='3':
+         fout.write('Times= '+strTimeDict+'\n\n')
       for gt in dataGT:
          MRH=trovaMRH(st,gt)
          rhlist=calcolarh(MRH)
          fout.write('GT='+gt+'\n')
-         if Inp4=='3':
+         if IntervalMode=='3':
             pt=''
          else:
             pt=0
-            fout.write('Times='+strdt+'\n')
+            fout.write('Times='+strTimeDict+'\n')
          probs=''
          for rh in rhlist:
             p=probab(st,gt,rh)
-            if Inp4=='3':
+            if IntervalMode=='3':
                pt+='+'+p
             else:
                pt+=p
             probs+=str(rh)+': '+str(p)+'\n'
-         if Inp4=='3':
+         if IntervalMode=='3':
             pt=pt[1:]
          fout.write('P(GT|ST)= '+str(pt)+'\n')
-         if Inp7=='2':
+         if OutputProbab=='2':
             fout.write(probs)
          fout.write('\n')
       fout.close()
@@ -494,4 +495,4 @@ if Inp6=='3':
 
 r=input('to close the program type "0" and submit\n')
 if r=='0':
-   pass
+pass

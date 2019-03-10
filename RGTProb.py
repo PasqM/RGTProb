@@ -16,7 +16,6 @@ import math
 #Initialization of useful variables
 
 Top=''
-gene=''
 topology=''
 nodes=''
 timeDict=dict()
@@ -80,9 +79,11 @@ if InputType=='2': #Allows for the manual insertion of GTs and STs
 
 OutputFormat=input('''Choose the desired output format: type 1 for desktop print (this might not work if it has too much to print),
              2 for 1 file for each ST-GT couple or 3 for 1 file for each ST.\n''') #notare che potrebbe funzionare bene in coll diretto a mathematica solo il 2
-OutputProbabs=input('Type 1 if you want only total GT|ST probabilities, 2 if you want also GT&RH|ST probabilities\n')
+OutputProbab=input('Type 1 if you want only total GT|ST probabilities, 2 if you want also GT&RH|ST probabilities\n')
 
 #Now all necessary information has been collected, we can write functions and the rest of the program
+
+#The following functions calculate the matrix M[i][j] containing the rank of the "last common ancestor" of i and j
 
 def S_calc(st): #calculates the vector S_species of the positions of the species names in the input string
 	global S_species
@@ -103,7 +104,7 @@ def T_calc(Tree): #calculates the vector T vector indicating the number of nodes
 		T.append(n)
 	return T
 
-def newick_analysis(ST): #newick processing, it extrapolates the dictionary of times and the matrix M[i][j] containing the rank of the "last common ancestor" of i and j
+def newick_analysis(ST): #newick processing, it extrapolates also the dictionary of times
 	global timeDict
 	K=[]
 	Val=[]
@@ -146,11 +147,33 @@ def newick_analysis(ST): #newick processing, it extrapolates the dictionary of t
 				h+=1
 			M[i].append(h+1)
 	return M
+	
+def read(stringa,S): #standard processing
+   T=T_calc(stringa)
+   M=[]
+   for i in range(NumSpec-1):
+      M.append([])
+      for j in range(NumSpec-1-i):
+         if S[i]<S[i+j+1]:
+            n=min(T[S[i]:S[j+i+1]])
+         else:
+            n=min(T[S[j+i+1]:S[i]])
+         k=max(S[i],S[j+i+1])
+         while T[k]>=n:
+            k+=1
+         if k+2==len(stringa):
+            M[i].append(1)
+         elif stringa[k+2] in ['1','2','3','4','5','6','7','8','9','0']:
+            M[i].append(int(stringa[k+1:k+3]))
+         else:
+            M[i].append(int(stringa[k+1]))
+   return M
 
-def trovaMRH(ST,GT):#its inputs are a RST and a RGT. the function returns the MRH of th RGT in the RST as a list
-   global NumSpec,Top,gene,topology,nodes,S_species,InputFormat
-   #this function only uses the function read
-   if InputFormat=='1':	   
+#Now we can calculate the MRH of a GT in a ST
+
+def trovaMRH(ST,GT):
+   global Top,gene,topology,nodes
+   if InputFormat=='1':
       specie=read(ST,S_species)
    elif InputFormat=='2':
       specie=newick_analysis(ST)
@@ -196,27 +219,6 @@ def trovaMRH(ST,GT):#its inputs are a RST and a RGT. the function returns the MR
       MRH.append(min(MRH[i],min(L[NumSpec-3-i])))
    MRH.sort()
    return MRH
-
-def read(stringa,S):
-   T=T_calc(stringa)
-   M=[]
-   for i in range(NumSpec-1):
-      M.append([])
-      for j in range(NumSpec-1-i):
-         if S[i]<S[i+j+1]:
-            n=min(T[S[i]:S[j+i+1]])
-         else:
-            n=min(T[S[j+i+1]:S[i]])
-         k=max(S[i],S[j+i+1])
-         while T[k]>=n:
-            k+=1
-         if k+2==len(stringa):
-            M[i].append(1)
-         elif stringa[k+2] in ['1','2','3','4','5','6','7','8','9','0']:
-            M[i].append(int(stringa[k+1:k+3]))
-         else:
-            M[i].append(int(stringa[k+1]))
-   return M
 
 def calcolarh(tup): #input: MRH. Output: a list with all possible rhs. Uses aggiorna_rh
    D=[(1,)]
@@ -333,7 +335,7 @@ def binomiale(n,k): #calculates the binomial n over k
    return math.factorial(n)//(math.factorial(k)*math.factorial(n-k))
 
 def valori(RH): #Output: a dictionary of k[ijz], it is useful to define m[NumSpec]=0 and k(NumSpec,0,z)=1
-   global NumSpec,Top,gene,topology,nodes
+   global NumSpec,Top,topology,nodes
    Pos=[] #a matrix s.t. Pos[i][j] is the branch in which rhe (j+1)^th coalescence happens in tau_(i+1)
    for i in range(NumSpec-1):
       Pos.append([])
@@ -469,7 +471,6 @@ if OutputFormat=='3':
       for gt in dataGT:
          MRH=trovaMRH(st,gt)
          rhlist=calcolarh(MRH)
-         fout.write('GT='+gt+'\n')
          if IntervalMode=='3':
             pt=''
          else:
@@ -483,7 +484,7 @@ if OutputFormat=='3':
             else:
                pt+=p
             probs+='Print["P('+str(rh)+')=", Expand['+str(p)+']]\n'
-         if Inp4=='3':
+         if IntervalMode=='3':
             pt=pt[1:]
          fout.write('Print["P('+gt+'|'+st+')= ", Expand['+str(pt)+']]\n')
          if OutputProbab=='2':
@@ -493,5 +494,5 @@ if OutputFormat=='3':
 
 
 r=input('to close the program type "0" and submit\n')
-	if r=='0':
+if r=='0':
 	pass

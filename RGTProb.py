@@ -76,7 +76,7 @@ if InputType=='2': #Allows for the manual insertion of GTs and STs
    genetree=input('Type the GT:\n')
    dataGT=[genetree]
 
-#now we have our data in a way that allows us to use only one script for both cases. Now the desired output format must be chosen
+#now we have our data in a way that allows us to use the same functions for both cases. Now the desired output format must be chosen
 
 OutputFormat=input('''Choose the desired output format: type 1 for desktop print (this might not work if it has too much to print),
              2 for 1 file for each ST-GT couple or 3 for 1 file for each ST.\n''') #notare che potrebbe funzionare bene in coll diretto a mathematica solo il 2
@@ -84,7 +84,15 @@ OutputProbabs=input('Type 1 if you want only total GT|ST probabilities, 2 if you
 
 #Now all necessary information has been collected, we can write functions and the rest of the program
 
-def T_calc(Tree): #calculates a vector indicating the number of nodes which separe the leafs from the root
+def S_calc(st): #calculates the vector S_species of the positions of the species names in the input string
+	global S_species
+	S_species=[]
+	for i in range(len(st)):
+		if st[i] not in ['1','2','3','4','5','6','7','8','9','0','.',':',',','(',')']:
+			S_species.append(i)
+	return
+
+def T_calc(Tree): #calculates the vector T vector indicating the number of nodes separating the leafs from the root
 	n=0
 	T=[]
 	for i in range(len(Tree)):
@@ -95,7 +103,7 @@ def T_calc(Tree): #calculates a vector indicating the number of nodes which sepa
 		T.append(n)
 	return T
 
-def newick_analysis(ST): #newick processing, it extrapolates the dictionary of times and the matrix M
+def newick_analysis(ST): #newick processing, it extrapolates the dictionary of times and the matrix M[i][j] containing the rank of the "last common ancestor" of i and j
 	global timeDict
 	K=[]
 	Val=[]
@@ -112,7 +120,7 @@ def newick_analysis(ST): #newick processing, it extrapolates the dictionary of t
 			Val.append(Decimal(stringa))
 		else:
 			Val.append(0)
-	for i in range(NumSpec-1):
+	for i in range(NumSpec-1): #the matrix K[i][j] contains the sum from T(N) to T(s+1) where s is the rank of the "last common ancestor" of i and j
 		K.append([])
 		for j in range(NumSpec-1-i):
 			n=min(T[S_species[i]:S_species[j+i+1]])
@@ -352,14 +360,6 @@ def valori(RH): #Output: a dictionary of k[ijz], it is useful to define m[NumSpe
       del(k[(NumSpec,0,i+1)])
    return k
 
-def S_calc(st): #finds the positions of the species names in the input string
-	global S_species
-	S_species=[]
-	for i in range(len(st)):
-		if st[i] not in ['1','2','3','4','5','6','7','8','9','0','.',':',',','(',')']:
-			S_species.append(i)
-	return
-
 if OutputFormat=='1': #at the moment it works with standard format, symbolic must be implemented, newick corrected
    for st in dataST:
       S_calc(st)
@@ -413,16 +413,15 @@ if OutputFormat=='2': #for each gt-st couple
          MRH=trovaMRH(st,gt)
          rhlist=calcolarh(MRH)
          if InputFormat=='1':
-            filename=st+'_'+gt+'_'+strTimeDict+'_prob.txt'
+            filename=st+'_'+gt+'_'+strTimeDict+'_prob.nb'
          else:
             stname=''
             for letter in st:
                if letter not in '0123456789,.:':
                   stname+=letter
                   stname+='newick'
-            filename=stname+'_'+gt+'_'+strTimeDict+'_prob.txt'
+            filename=stname+'_'+gt+'_'+strTimeDict+'_prob.nb'
          fout=open(filename, 'w')
-         fout.write('GT='+gt+'\nST='+st+'\n')
          if IntervalMode!='3':
             fout.write('Times='+strTimeDict+'\n')
             pt=0
@@ -435,10 +434,10 @@ if OutputFormat=='2': #for each gt-st couple
                pt+='+'+p
             else:
                pt+=p
-            probs+=str(rh)+': '+str(p)+'\n'
+            probs+='Print["P('+str(rh)+')=", Expand['+str(p)+']]\n'
          if IntervalMode=='3':
             pt=pt[1:]
-         fout.write('P(GT|ST)= '+str(pt)+'\n')
+         fout.write('Print["P('+gt+'|'+st+')= ", Expand['+str(pt)+']]\n')
          if OutputProbab=="2":
             fout.write(probs)
          fout.close()
@@ -456,16 +455,15 @@ if OutputFormat=='3':
             strTimeDict+=','+str(timeDict[i+3])
          strTimeDict+=')'
       if InputFormat=='1':
-         filename=st+'_'+strTimeDict+'_prob.txt'
+         filename=st+'_'+strTimeDict+'_prob.nb'
       else:
          stname=''
          for letter in st:
             if letter not in '0123456789,.:':
                stname+=letter
                stname+='newick'
-         filename=stname+'_'+strTimeDict+'_prob.txt'
+         filename=stname+'_'+strTimeDict+'_prob.nb'
       fout=open(filename, 'w')
-      fout.write('ST= '+st+'\n')
       if IntervalMode!='3':
          fout.write('Times= '+strTimeDict+'\n\n')
       for gt in dataGT:
@@ -484,10 +482,10 @@ if OutputFormat=='3':
                pt+='+'+p
             else:
                pt+=p
-            probs+=str(rh)+': '+str(p)+'\n'
-         if IntervalMode=='3':
+            probs+='Print["P('+str(rh)+')=", Expand['+str(p)+']]\n'
+         if Inp4=='3':
             pt=pt[1:]
-         fout.write('P(GT|ST)= '+str(pt)+'\n')
+         fout.write('Print["P('+gt+'|'+st+')= ", Expand['+str(pt)+']]\n')
          if OutputProbab=='2':
             fout.write(probs)
          fout.write('\n')
@@ -495,5 +493,5 @@ if OutputFormat=='3':
 
 
 r=input('to close the program type "0" and submit\n')
-if r=='0':
-pass
+	if r=='0':
+	pass

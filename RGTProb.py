@@ -2,6 +2,13 @@
 #the Department of Biology of the University of Pisa, under the direction of Dr. Filippo Di Santo, University of Pisa, Department of 
 #Mathematics
 
+'''Commenti su cose da fare/migliorare:
+1- La funzione newick analysis va resa più leggibile, le variabili interne devono essere più leggibili.
+2- Ma col newick non possiamo fare i polinomi???
+3- Ma newick che formato indica alla fine???
+La revisione arriva fino a update_rh (circa metà programma
+'''
+
 
 print('''Welcome to RGTProb, the gene tree probability calculator. This tool will allow you to calculate Ranked Gene Tree
          probabilities conditioning on a species tree in multiple formats. You can modify the program as you like, but please always mention the
@@ -18,31 +25,33 @@ import math
 Top=''
 topology=''
 nodes=''
-timeDict=dict()
+timeDict=dict()#A dictionary containing the lengths of the branches
 l=dict()
-IntervalMode='000'
-S_species=''
+IntervalMode='000' #Specifies the mode in which the interval lengths should be determined
+S_species=''#Vector of the positions of the species names in the input string
 
 InputFormat=input('Select the desired input format: type 1 for standard format or 2 for newick format\n')
 InputType=input('Select how to submit inputs: type 1 to submit files or 2 to type trees manually\n')
 NumSpec=int(input('Select the number of species\n'))
 
-#Functions for time models
+#Checking for valid inputs
 
-def Time_Yule(par):
-   global timeDict, NumSpec
-   for i in range(NumSpec-2):
-      timeDict[i+2]=1/((i+2)*par)
-   return timeDict
+if InputFormat not in ['1','2']:
+   print('Error, invalid input format request!\nPlease restart the program.')
+   
+if InputType not in ['1','2']:
+   print('Error, invalid input submission mode request!\nPlease restart the program.')
 
-###
 
-if InputFormat=='1': #standard format
+
+### Preliminary data acquisition, and preference settings
+
+if InputFormat=='1': #standard format: needs to create a dictionary of time lengths 
    IntervalMode=input("Select the desired time interval mode: type 1 for Yule's model, 2 to insert time intervals manually or 3 for a polynomial output (readable by Wolfram Mathematica)\n")
    if IntervalMode=='1':#creates a standard set of times according to the function Time_Yule
       SpecRatePar=input('Insert the parameter for the speciation rate\n')
       Time_Yule(float(SpecRatePar))
-   elif IntervalMode=='2': # insert intervals
+   elif IntervalMode=='2': # insert intervals manually
       times_raw=input('Write the desired time intervals from T(2) to T(N-1) only separated by a comma\n')
       times=times_raw.split(',')
       for j in range (NumSpec-2):
@@ -51,14 +60,14 @@ if InputFormat=='1': #standard format
    elif IntervalMode=='3': # polynomials
       pass
    else:
-      print('ERROR: invalid input')
+      print('ERROR: invalid input. Please restart the program.')
 
 
-if InputType=='1': #process files
-   fileST=input('Type the name of the file containing STs as "filename.txt"\n')
+if InputType=='1': #processing files to extract the trees on which to perform the calculations
+   fileST=input('Type the name of the file containing SPECIES trees as filename.txt\n')
    openST=open(fileST)
    dataST=[]
-   fileGT=input('Type the name of the file containing GTs as "filename.txt"\n')
+   fileGT=input('Type the name of the file containing GENE trees as filename.txt\n')
    openGT=open(fileGT)
    dataGT=[]
    for st in openST:
@@ -68,24 +77,31 @@ if InputType=='1': #process files
       gt=gt.strip()
       dataGT.append(gt)
 
+
 if InputType=='2': #Allows for the manual insertion of GTs and STs
    print('Please write trees without blank spaces and characters that are not letters, numbers parenthesis: an example of correct typing is ((AB)2C)1')
-   speciestree=input('Type the ST:\n')
+   speciestree=input('Type the SPECIES tree:\n')
    dataST=[speciestree]
-   genetree=input('Type the GT:\n')
+   genetree=input('Type the GENE tree:\n')
    dataGT=[genetree]
+
+
+def Time_Yule(par):#function that sets the time intervals according tu Yule's model
+   global timeDict, NumSpec
+   for i in range(NumSpec-2):
+      timeDict[i+2]=1/((i+2)*par)
+   return timeDict
 
 #now we have our data in a way that allows us to use the same functions for both cases. Now the desired output format must be chosen
 
-OutputFormat=input('''Choose the desired output format: type 1 for desktop print (this might not work if it has too much to print),
-             2 for 1 file for each ST-GT couple or 3 for 1 file for each ST.\n''') #notare che potrebbe funzionare bene in coll diretto a mathematica solo il 2
-OutputProbab=input('Type 1 if you want only total GT|ST probabilities, 2 if you want also GT&RH|ST probabilities\n')
+OutputFormat=input('''Choose the desired output format: type 1 for desktop print (not optimal for big trees or a collection of trees),
+             2 for 1 file for each ST-GT couple or 3 for 1 file for each ST.\n''')
+OutputProbab=input('Type 1 if you only want total GT|ST probabilities, 2 if you also want GT&RH|ST probabilities\n')
 
-#Now all necessary information has been collected, we can write functions and the rest of the program
 
 #The following functions calculate the matrix M[i][j] containing the rank of the "last common ancestor" of i and j
 
-def S_calc(st): #calculates the vector S_species of the positions of the species names in the input string
+def S_calc(st): #calculates the vector S_species of the positions of the species names in the input string st
 	global S_species
 	S_species=[]
 	for i in range(len(st)):
@@ -93,18 +109,18 @@ def S_calc(st): #calculates the vector S_species of the positions of the species
 			S_species.append(i)
 	return
 
-def T_calc(Tree): #calculates the vector T vector indicating the number of nodes separating the leafs from the root
+def T_calc(Tree): #calculates the vector LRd (Leaves-Root distance) vector indicating the number of nodes separating the leaves from the root
 	n=0
-	T=[]
+	LRd=[]
 	for i in range(len(Tree)):
 		if Tree[i]=='(':
 			n=n+1
 		if Tree[i]==')':
 			n=n-1
-		T.append(n)
-	return T
+		LRd.append(n)
+	return LRd
 
-def newick_analysis(ST): #newick processing, it extrapolates also the dictionary of times
+def newick_analysis(ST): #Processing of the species tree when given in newick format, it also extrapolates the dictionary of times
 	global timeDict
 	K=[]
 	Val=[]
@@ -148,7 +164,7 @@ def newick_analysis(ST): #newick processing, it extrapolates also the dictionary
 			M[i].append(h+1)
 	return M
 	
-def read(stringa,S): #standard processing
+def read(stringa,S): #Processing of a species tree when provided in standard format
    T=T_calc(stringa)
    M=[]
    for i in range(NumSpec-1):
@@ -169,9 +185,9 @@ def read(stringa,S): #standard processing
             M[i].append(int(stringa[k+1]))
    return M
 
-#Now we can calculate the MRH of a GT in a ST
+#Now we can calculate the Maximal Ranked History (MRH) of a GT in a ST
 
-def trovaMRH(ST,GT):
+def findaMRH(ST,GT):
    global Top,gene,topology,nodes
    if InputFormat=='1':
       specie=read(ST,S_species)
@@ -220,28 +236,28 @@ def trovaMRH(ST,GT):
    MRH.sort()
    return MRH
 
-def calcolarh(tup): #input: MRH. Output: a list with all possible rhs. Uses aggiorna_rh
+def calcolarh(tup): #input: MRH. Output: a list with all possible rhs. Uses update_rh
    D=[(1,)]
    j=1
    while j<len(tup):
-      D=aggiorna_rh(ins=D,Z=tup[j])
+      D=update_rh(ins=D,Z=tup[j])
       j+=1
    return D
 
-def aggiorna_rh(ins,Z=1000): #Input: a list of RHs. Output: a list of RHs which are all those obtained by elongating of 1 element the
+def update_rh(ins,Z=100000000000000): #Input: a list of RHs. Output: a list of RHs which are all those obtained by elongating of 1 element the
    #input with valid values
-   d=[]
-   for chiave in ins:
-      NumSpec=len(chiave)
+   d=[]#a list of all ranked histories
+   for key in ins:
+      NumSpec=len(key)
       break
-   T=min(NumSpec+1,Z)
-   for chiave in ins:
+   Limit=min(NumSpec+1,Z)
+   for key in ins:
       n=0
-      M=max(chiave)
-      while n<M:
+      MaxKey=max(key)
+      while n<MaxKey:
          n+=1
-      while n<=T:
-         newkey=chiave+(n,)
+      while n<=Limit:
+         newkey=key+(n,)
          d.append(newkey)
          n+=1
    return d
@@ -376,7 +392,7 @@ if OutputFormat=='1': #at the moment it works with standard format, symbolic mus
       if strTimeDict!='(':
          print('Times= '+strTimeDict)
       for gt in dataGT:
-         MRH=trovaMRH(st,gt)
+         MRH=findaMRH(st,gt)
          rhlist=calcolarh(MRH)
          if IntervalMode=='3':
             pt=''
@@ -412,7 +428,7 @@ if OutputFormat=='2': #for each gt-st couple
             strTimeDict+=','+str(timeDict[i+3])
          strTimeDict+=')'
       for gt in dataGT:
-         MRH=trovaMRH(st,gt)
+         MRH=findaMRH(st,gt)
          rhlist=calcolarh(MRH)
          if InputFormat=='1':
             filename=st+'_'+gt+'_'+strTimeDict+'_prob.nb'
@@ -469,7 +485,7 @@ if OutputFormat=='3':
       if IntervalMode!='3':
          fout.write('Times= '+strTimeDict+'\n\n')
       for gt in dataGT:
-         MRH=trovaMRH(st,gt)
+         MRH=findaMRH(st,gt)
          rhlist=calcolarh(MRH)
          if IntervalMode=='3':
             pt=''
@@ -495,4 +511,4 @@ if OutputFormat=='3':
 
 r=input('to close the program type "0" and submit\n')
 if r=='0':
-	pass
+   pass

@@ -60,7 +60,7 @@ if InputFormat=='1': #standard format: needs to create a dictionary of time leng
       print('ERROR: invalid input. Please restart the program.')
 
 
-if InputType=='1': ##processing files to extract the trees on which to perform the calculations
+if InputType=='1': #processing files to extract the trees on which to perform the calculations
    fileST=input('Type the name of the file containing SPECIES trees as filename.txt\n')
    openST=open(fileST)
    dataST=[]
@@ -86,14 +86,14 @@ def Time_Yule(par):#function that sets the time intervals according tu Yule's mo
    for i in range(NumSpec-2):
       timeDict[i+2]=1/((i+2)*par)
    return timeDict
-   
+
 #now we have our data in a way that allows us to use the same functions for both cases. Now the desired output format must be chosen
 
 OutputFormat=input('''Choose the desired output format: type 1 for desktop print (not optimal for big trees or a collection of trees),
              2 for 1 file for each ST-GT couple or 3 for 1 file for each ST.\n''')
 OutputProbab=input('Type 1 if you only want total GT|ST probabilities, 2 if you also want GT&RH|ST probabilities\n')
 
-#The following functions calculate the matrix M[i][j] containing the rank of the "last common ancestor" (from now LCA) of i and j
+#The following functions calculate the matrix M[i][j] containing the rank of the "last common ancestor" (from now on LCA) of i and j
 
 def S_calc(st): #calculates the vector S_species of the positions of the species names in the input string st
 	global S_species
@@ -105,14 +105,14 @@ def S_calc(st): #calculates the vector S_species of the positions of the species
 
 def T_calc(Tree): #calculates the vector LRd (Leaves-Root distance) vector indicating the number of nodes separating the leaves from the root
 	n=0
-	T=[]
+	LdR=[]
 	for i in range(len(Tree)):
 		if Tree[i]=='(':
 			n=n+1
 		if Tree[i]==')':
 			n=n-1
-		T.append(n)
-	return T
+		LdR.append(n)
+	return LdR
 
 def newick_analysis(ST): #Processing of the species tree when given in newick format, it also extrapolates the dictionary of times
 	global timeDict
@@ -179,7 +179,7 @@ def read(stringa,S): #Processing of a species tree when provided in standard for
             M[i].append(int(stringa[k+1]))
    return M
 
-#Now we can calculate the Maximal Ranked History (MRH) of a GT in a ST and we calculate the matrices topology, Top and nodes.
+#Now we can calculate the Maximal Ranked History (MRH) of a GT in a ST and the matrices topology, Top and nodes.
 
 def findaMRH(ST,GT):
    global Top,gene,topology,nodes
@@ -194,7 +194,7 @@ def findaMRH(ST,GT):
          n+=1
       S_gene.append(n)
    gene=read(GT,S_gene)
-   L=[] #L[i] will contain the ranks of the LCAs in the ST of the couples of species whose LCA in the GT has rank i
+   L=[] #L[i] will contain the ranks of the LCAs (according to the ST) of the couples of species whose LCA in the GT has rank i
    topology=[[]] #topology[i][j] is the branch containing the (i+1) phyletic line during the (j+1)^th time interval
    Top=[]
    nodes=[]

@@ -9,7 +9,6 @@
 La revisione arriva fino a update_rh (circa metà programma
 '''
 
-
 print('''Welcome to RGTProb, the gene tree probability calculator. This tool will allow you to calculate Ranked Gene Tree
          probabilities conditioning on a species tree in multiple formats. You can modify the program as you like, but please always mention the
          original project. If you develop something interesting please let us know, so that we can add it to our software and distribute
@@ -38,11 +37,9 @@ NumSpec=int(input('Select the number of species\n'))
 
 if InputFormat not in ['1','2']:
    print('Error, invalid input format request!\nPlease restart the program.')
-   
+
 if InputType not in ['1','2']:
    print('Error, invalid input submission mode request!\nPlease restart the program.')
-
-
 
 ### Preliminary data acquisition, and preference settings
 
@@ -63,7 +60,7 @@ if InputFormat=='1': #standard format: needs to create a dictionary of time leng
       print('ERROR: invalid input. Please restart the program.')
 
 
-if InputType=='1': #processing files to extract the trees on which to perform the calculations
+if InputType=='1': ##processing files to extract the trees on which to perform the calculations
    fileST=input('Type the name of the file containing SPECIES trees as filename.txt\n')
    openST=open(fileST)
    dataST=[]
@@ -77,7 +74,6 @@ if InputType=='1': #processing files to extract the trees on which to perform th
       gt=gt.strip()
       dataGT.append(gt)
 
-
 if InputType=='2': #Allows for the manual insertion of GTs and STs
    print('Please write trees without blank spaces and characters that are not letters, numbers parenthesis: an example of correct typing is ((AB)2C)1')
    speciestree=input('Type the SPECIES tree:\n')
@@ -85,21 +81,19 @@ if InputType=='2': #Allows for the manual insertion of GTs and STs
    genetree=input('Type the GENE tree:\n')
    dataGT=[genetree]
 
-
 def Time_Yule(par):#function that sets the time intervals according tu Yule's model
    global timeDict, NumSpec
    for i in range(NumSpec-2):
       timeDict[i+2]=1/((i+2)*par)
    return timeDict
-
+   
 #now we have our data in a way that allows us to use the same functions for both cases. Now the desired output format must be chosen
 
 OutputFormat=input('''Choose the desired output format: type 1 for desktop print (not optimal for big trees or a collection of trees),
              2 for 1 file for each ST-GT couple or 3 for 1 file for each ST.\n''')
 OutputProbab=input('Type 1 if you only want total GT|ST probabilities, 2 if you also want GT&RH|ST probabilities\n')
 
-
-#The following functions calculate the matrix M[i][j] containing the rank of the "last common ancestor" of i and j
+#The following functions calculate the matrix M[i][j] containing the rank of the "last common ancestor" (from now LCA) of i and j
 
 def S_calc(st): #calculates the vector S_species of the positions of the species names in the input string st
 	global S_species
@@ -111,14 +105,14 @@ def S_calc(st): #calculates the vector S_species of the positions of the species
 
 def T_calc(Tree): #calculates the vector LRd (Leaves-Root distance) vector indicating the number of nodes separating the leaves from the root
 	n=0
-	LRd=[]
+	T=[]
 	for i in range(len(Tree)):
 		if Tree[i]=='(':
 			n=n+1
 		if Tree[i]==')':
 			n=n-1
-		LRd.append(n)
-	return LRd
+		T.append(n)
+	return T
 
 def newick_analysis(ST): #Processing of the species tree when given in newick format, it also extrapolates the dictionary of times
 	global timeDict
@@ -137,7 +131,7 @@ def newick_analysis(ST): #Processing of the species tree when given in newick fo
 			Val.append(Decimal(stringa))
 		else:
 			Val.append(0)
-	for i in range(NumSpec-1): #the matrix K[i][j] contains the sum from T(N) to T(s+1) where s is the rank of the "last common ancestor" of i and j
+	for i in range(NumSpec-1): #the matrix K[i][j] contains the sum from T(N) to T(s+1) where s is the rank of the LCA of i and j
 		K.append([])
 		for j in range(NumSpec-1-i):
 			n=min(T[S_species[i]:S_species[j+i+1]])
@@ -172,7 +166,7 @@ def read(stringa,S): #Processing of a species tree when provided in standard for
       for j in range(NumSpec-1-i):
          if S[i]<S[i+j+1]:
             n=min(T[S[i]:S[j+i+1]])
-         else:
+         else: #this is useful to process GTs in which the order of the species is different from the ST
             n=min(T[S[j+i+1]:S[i]])
          k=max(S[i],S[j+i+1])
          while T[k]>=n:
@@ -185,7 +179,7 @@ def read(stringa,S): #Processing of a species tree when provided in standard for
             M[i].append(int(stringa[k+1]))
    return M
 
-#Now we can calculate the Maximal Ranked History (MRH) of a GT in a ST
+#Now we can calculate the Maximal Ranked History (MRH) of a GT in a ST and we calculate the matrices topology, Top and nodes.
 
 def findaMRH(ST,GT):
    global Top,gene,topology,nodes
@@ -200,12 +194,11 @@ def findaMRH(ST,GT):
          n+=1
       S_gene.append(n)
    gene=read(GT,S_gene)
-   #now we calculate the MRH. L, Top, topology, nodes are created at the same time
-   L=[] #L[i] will be the time of the (i+1)th node of the gene tree
+   L=[] #L[i] will contain the ranks of the LCAs in the ST of the couples of species whose LCA in the GT has rank i
    topology=[[]] #topology[i][j] is the branch containing the (i+1) phyletic line during the (j+1)^th time interval
    Top=[]
    nodes=[]
-   for i in range(NumSpec-1):
+   for i in range(NumSpec-1): #forse si può spostare Top in questo ciclo for (meglio)
       L.append([])
       topology.append([])
       topology[0].append(1)
@@ -511,4 +504,4 @@ if OutputFormat=='3':
 
 r=input('to close the program type "0" and submit\n')
 if r=='0':
-   pass
+	pass

@@ -3,9 +3,9 @@
 #Mathematics
 
 '''Commenti su cose da fare/migliorare:
-1- La funzione newick analysis va resa più leggibile, le variabili interne devono essere più leggibili.
-2- Ma col newick non possiamo fare i polinomi???
-3- Ma newick che formato indica alla fine???
+1- La funzione newick analysis va resa più leggibile, le variabili interne devono essere più leggibili. Boh, posso tradurre i nomi italiani, ma certe a certe variabili non riesco a dare un nome self-explaining
+2- Ma col newick non possiamo fare i polinomi??? Boh, perchè no? La domanda è perchè qualcuno vorrebe usare newick per farsi calcolare dei polinomi
+3- Ma newick che formato indica alla fine??? Newick è quello con le lunghezze dei rami esplicite, se serve cambiamo i nomi
 La revisione arriva fino a update_rh (circa metà programma
 '''
 
@@ -117,69 +117,69 @@ def T_calc(Tree): #calculates the vector LRd (Leaves-Root distance) vector indic
 def newick_analysis(ST): #Processing of the species tree when given in newick format, it also extrapolates the dictionary of times
 	global timeDict
 	K=[]
-	Val=[]
-	tempi=set()
+	BranchL=[]
+	times=set()
 	M=[]
-	T=T_calc(ST)
-	for i in range(len(ST)): #the vector Val contains the branch lenghts
+	LdR=T_calc(ST)
+	for i in range(len(ST)): #the vector BranchL contains the branch lenghts
 		if ST[i] in [':']:
 			j=i+1
-			stringa=''
+			string=''
 			while ST[j] in ['1','2','3','4','5','6','7','8','9','0','.']:
-				stringa=stringa+ST[j]
+				string=string+ST[j]
 				j=j+1
-			Val.append(Decimal(stringa))
+			BranchL.append(Decimal(string))
 		else:
-			Val.append(0)
+			BranchL.append(0)
 	for i in range(NumSpec-1): #the matrix K[i][j] contains the sum from T(N) to T(s+1) where s is the rank of the LCA of i and j
 		K.append([])
 		for j in range(NumSpec-1-i):
-			n=min(T[S_species[i]:S_species[j+i+1]])
+			n=min(LdR[S_species[i]:S_species[j+i+1]])
 			h=S_species[i]+1
-			t=Val[h]
-			for k in range(T[S_species[i]]-n):
-				while T[h]!=T[S_species[i]]-k-1:
+			t=BranchL[h]
+			for k in range(LdR[S_species[i]]-n):
+				while LdR[h]!=LdR[S_species[i]]-k-1:
 					h+=1
 				h+=1
-				t=t+Val[h]
+				t=t+BranchL[h]
 			K[i].append(t)
-			tempi.add(t)
-	tem=list(tempi)
-	tem.sort(reverse=True)
-	tem.append(0)
+			times.add(t)
+	tim=list(times)
+	tim.sort(reverse=True)
+	tim.append(0)
 	timeDict=dict()
 	for i in range(NumSpec-1):
 		M.append([])
-		timeDict[i+2]=float(tem[i]-tem[i+1])
+		timeDict[i+2]=float(tim[i]-tim[i+1])
 		for j in range(NumSpec-1-i):
 			h=0
-			while tem[h]!=K[i][j]:
+			while tim[h]!=K[i][j]:
 				h+=1
 			M[i].append(h+1)
 	return M
 	
-def read(stringa,S): #Processing of a species tree when provided in standard format
-   T=T_calc(stringa)
+def read(string,S): #Processing of a species tree when provided in standard format
+   LdR=T_calc(string)
    M=[]
    for i in range(NumSpec-1):
       M.append([])
       for j in range(NumSpec-1-i):
          if S[i]<S[i+j+1]:
-            n=min(T[S[i]:S[j+i+1]])
+            n=min(LdR[S[i]:S[j+i+1]])
          else: #this is useful to process GTs in which the order of the species is different from the ST
-            n=min(T[S[j+i+1]:S[i]])
+            n=min(LdR[S[j+i+1]:S[i]])
          k=max(S[i],S[j+i+1])
-         while T[k]>=n:
+         while LdR[k]>=n:
             k+=1
-         if k+2==len(stringa):
+         if k+2==len(string):
             M[i].append(1)
-         elif stringa[k+2] in ['1','2','3','4','5','6','7','8','9','0']:
-            M[i].append(int(stringa[k+1:k+3]))
+         elif string[k+2] in ['1','2','3','4','5','6','7','8','9','0']:
+            M[i].append(int(string[k+1:k+3]))
          else:
-            M[i].append(int(stringa[k+1]))
+            M[i].append(int(string[k+1]))
    return M
 
-#Now we can calculate the Maximal Ranked History (MRH) of a GT in a ST and the matrices topology, Top and nodes.
+#Now we can calculate the Maximal Ranked History (MRH) of a GT in a ST and the vector nodes and the matrices topology and Top.
 
 def findaMRH(ST,GT):
    global Top,gene,topology,nodes
@@ -197,15 +197,15 @@ def findaMRH(ST,GT):
    L=[] #L[i] will contain the ranks of the LCAs (according to the ST) of the couples of species whose LCA in the GT has rank i
    topology=[[]] #topology[i][j] is the branch containing the (i+1) phyletic line during the (j+1)^th time interval
    Top=[]
-   nodes=[]
-   for i in range(NumSpec-1): #forse si può spostare Top in questo ciclo for (meglio)
+   nodes=[]#nodes[i] indicates one of the species descending from the node with rank i+1
+   for i in range(NumSpec-1):
       L.append([])
       topology.append([])
       topology[0].append(1)
+      Top.append([])
    for i in range(NumSpec-1):
       for j in range(NumSpec-i-1):
          L[gene[i][j]-1].append(specie[i][j])
-      Top.append([])
       n=0
       for j in range(NumSpec-1):
          if specie[i][0]>j:
@@ -345,7 +345,7 @@ def binomiale(n,k): #calculates the binomial n over k
 
 def valori(RH): #Output: a dictionary of k[ijz], it is useful to define m[NumSpec]=0 and k(NumSpec,0,z)=1
    global NumSpec,Top,topology,nodes
-   Pos=[] #a matrix s.t. Pos[i][j] is the branch in which rhe (j+1)^th coalescence happens in tau_(i+1)
+   Pos=[] #a matrix s.t. Pos[i][j] is the branch containing the (j+1)^th coalescence in tau_(i+1)
    for i in range(NumSpec-1):
       Pos.append([])
       Pos[RH[i]-1].append(topology[nodes[i]][RH[i]-1])

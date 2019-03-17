@@ -233,23 +233,16 @@ def calcolarh(tup): #input: MRH. Output: a list with all possible rhs. Uses upda
    D=[(1,)]
    j=1
    while j<len(tup):
-      D=update_rh(ins=D,Z=tup[j])
+      D=update_rh(D,tup[j])
       j+=1
    return D
 
-def update_rh(ins,Z=100000000000000): #Input: a list of RHs. Output: a list of RHs which are all those obtained by elongating of 1 element the
+def update_rh(ins,Z): #Input: a list of RHs. Output: a list of RHs which are all those obtained by elongating of 1 element the
    #input with valid values
    d=[]#a list of all ranked histories
    for key in ins:
-      NumSpec=len(key)
-      break
-   Limit=min(NumSpec+1,Z)
-   for key in ins:
-      n=0
-      MaxKey=max(key)
-      while n<MaxKey:
-         n+=1
-      while n<=Limit:
+      n=max(key)
+      while n<=Z:
          newkey=key+(n,)
          d.append(newkey)
          n+=1

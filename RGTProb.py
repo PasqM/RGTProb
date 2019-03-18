@@ -26,6 +26,7 @@ topology=''
 nodes=''
 timeDict=dict()#A dictionary containing the lengths of the branches
 l=dict()
+m=dict()
 IntervalMode='000' #Specifies the mode in which the interval lengths should be determined
 S_species=''#Vector of the positions of the species names in the input string
 
@@ -51,8 +52,7 @@ if InputFormat=='1': #standard format: needs to create a dictionary of time leng
    elif IntervalMode=='2': # insert intervals manually
       times_raw=input('Write the desired time intervals from T(2) to T(N-1) only separated by a comma\n')
       times=times_raw.split(',')
-      for j in range (NumSpec-2):
-         n=j+2
+      for n in range (2,NumSpec):
          timeDict[n]=float(times[j])
    elif IntervalMode=='3': # polynomials
       pass
@@ -83,8 +83,8 @@ if InputType=='2': #Allows for the manual insertion of GTs and STs
 
 def Time_Yule(par):#function that sets the time intervals according tu Yule's model
    global timeDict, NumSpec
-   for i in range(NumSpec-2):
-      timeDict[i+2]=1/((i+2)*par)
+   for i in range(2,NumSpec):
+      timeDict[i]=1/(i*par)
    return timeDict
 
 #now we have our data in a way that allows us to use the same functions for both cases. Now the desired output format must be chosen
@@ -101,18 +101,17 @@ def S_calc(st): #calculates the vector S_species of the positions of the species
 	for i in range(len(st)):
 		if st[i] not in ['1','2','3','4','5','6','7','8','9','0','.',':',',','(',')']:
 			S_species.append(i)
-	return
 
 def T_calc(Tree): #calculates the vector LRd (Leaves-Root distance) vector indicating the number of nodes separating the leaves from the root
 	n=0
-	LdR=[]
+	LRd=[]
 	for i in range(len(Tree)):
 		if Tree[i]=='(':
 			n=n+1
 		if Tree[i]==')':
 			n=n-1
-		LdR.append(n)
-	return LdR
+		LRd.append(n)
+	return LRd
 
 def newick_analysis(ST): #Processing of the species tree when given in newick format, it also extrapolates the dictionary of times
 	global timeDict
@@ -120,7 +119,7 @@ def newick_analysis(ST): #Processing of the species tree when given in newick fo
 	BranchL=[]
 	times=set()
 	M=[]
-	LdR=T_calc(ST)
+	LRd=T_calc(ST)
 	for i in range(len(ST)): #the vector BranchL contains the branch lenghts
 		if ST[i] in [':']:
 			j=i+1
@@ -133,12 +132,12 @@ def newick_analysis(ST): #Processing of the species tree when given in newick fo
 			BranchL.append(0)
 	for i in range(NumSpec-1): #the matrix K[i][j] contains the sum from T(N) to T(s+1) where s is the rank of the LCA of i and j
 		K.append([])
-		for j in range(NumSpec-1-i):
-			n=min(LdR[S_species[i]:S_species[j+i+1]])
+		for j in range(i+1,NumSpec):
+			n=min(LRd[S_species[i]:S_species[j]])
 			h=S_species[i]+1
 			t=BranchL[h]
-			for k in range(LdR[S_species[i]]-n):
-				while LdR[h]!=LdR[S_species[i]]-k-1:
+			for k in range(LRd[S_species[i]]-n):
+				while LRd[h]!=LRd[S_species[i]]-k-1:
 					h+=1
 				h+=1
 				t=t+BranchL[h]
@@ -159,17 +158,17 @@ def newick_analysis(ST): #Processing of the species tree when given in newick fo
 	return M
 	
 def read(string,S): #Processing of a species tree when provided in standard format
-   LdR=T_calc(string)
+   LRd=T_calc(string)
    M=[]
    for i in range(NumSpec-1):
       M.append([])
-      for j in range(NumSpec-1-i):
-         if S[i]<S[i+j+1]:
-            n=min(LdR[S[i]:S[j+i+1]])
+      for j in range(i+1,NumSpec):
+         if S[i]<S[j]:
+            n=min(LRd[S[i]:S[j]])
          else: #this is useful to process GTs in which the order of the species is different from the ST
-            n=min(LdR[S[j+i+1]:S[i]])
-         k=max(S[i],S[j+i+1])
-         while LdR[k]>=n:
+            n=min(LRd[S[j]:S[i]])
+         k=max(S[i],S[j])
+         while LRd[k]>=n:
             k+=1
          if k+2==len(string):
             M[i].append(1)
@@ -179,7 +178,7 @@ def read(string,S): #Processing of a species tree when provided in standard form
             M[i].append(int(string[k+1]))
    return M
 
-#Now we can calculate the Maximal Ranked History (MRH) of a GT in a ST and the vector nodes and the matrices topology and Top.
+#Now we can calculate the Maximal Ranked History (MRH) of a GT in a ST, the vector nodes and the matrices topology and Top.
 
 def findaMRH(ST,GT):
    global Top,gene,topology,nodes
@@ -194,10 +193,10 @@ def findaMRH(ST,GT):
          n+=1
       S_gene.append(n)
    gene=read(GT,S_gene)
-   L=[] #L[i] will contain the ranks of the LCAs (according to the ST) of the couples of species whose LCA in the GT has rank i
+   L=[] #L[i] will contain the ranks of the LCAs (according to the ST) of the couples of species whose LCA in the GT has rank i+1
    topology=[[]] #topology[i][j] is the branch containing the (i+1) phyletic line during the (j+1)^th time interval
-   Top=[]
-   nodes=[]#nodes[i] indicates one of the species descending from the node with rank i+1
+   Top=[] #Top[i][j] is the branch in the (i+1)^th time interval containing the phyletic line of the branch j+1 in the (i+2)^th time interval
+   nodes=[] #nodes[i] indicates one of the species descending from the node with rank i+1
    for i in range(NumSpec-1):
       L.append([])
       topology.append([])
@@ -231,28 +230,88 @@ def findaMRH(ST,GT):
 
 def calcolarh(tup): #input: MRH. Output: a list with all possible rhs. Uses update_rh
    D=[(1,)]
-   j=1
-   while j<len(tup):
+   for j in range(1,len(tup)):
       D=update_rh(D,tup[j])
-      j+=1
    return D
 
 def update_rh(ins,Z): #Input: a list of RHs. Output: a list of RHs which are all those obtained by elongating of 1 element the
-   #input with valid values
    d=[]#a list of all ranked histories
    for key in ins:
-      n=max(key)
-      while n<=Z:
+      for n in range(max(key),Z+1):
          newkey=key+(n,)
          d.append(newkey)
-         n+=1
    return d
+   
+def k_calc(RH): #Output: a dictionary of k[ijz], it is useful to define m[NumSpec]=0 and k(NumSpec,0,z)=1, it also calculates the dictionary of m
+	global m
+	Pos=[] #a matrix s.t. Pos[i][j] is the branch containing the (j+1)^th coalescence in tau_(i+1)
+	for i in range(NumSpec-1):
+		Pos.append([])
+		Pos[RH[i]-1].append(topology[nodes[i]][RH[i]-1])
+	m=dict() #m[i] is the number of nodes of the gene tree in the i-th interval of the species tree
+	k=dict()
+	for i in range(1,NumSpec+1):
+		m[i]=RH.count(i)
+		k[(NumSpec,0,i)]=1
+	for i in range(1,NumSpec):
+		for z in range (NumSpec-i):
+			k[(NumSpec-i,m[NumSpec-i],z+1)]=0
+		for j in range(m[NumSpec-i]+1):
+			if j==0:
+				for z in range(NumSpec-i+1):
+					k[(NumSpec-i,m[NumSpec-i],Top[NumSpec-1-i][z])]+=k[(NumSpec-i+1,0,z+1)]
+			else:
+				for z in range(NumSpec-i):
+					if z+1==Pos[NumSpec-1-i][m[NumSpec-i]-j]:
+						k[(NumSpec-i,m[NumSpec-i]-j,z+1)]=k[(NumSpec-i,m[NumSpec-i]-j+1,z+1)]-1
+					else:
+						k[(NumSpec-i,m[NumSpec-i]-j,z+1)]=k[(NumSpec-i,m[NumSpec-i]-j+1,z+1)]
+	for i in range(NumSpec):
+		del(k[(NumSpec,0,i+1)])
+	return k
+   
+def Lambda_calc(RH): #Input: a dictionary of k[ijz]. Output: a dictionary of lambda(i,j). Uses k_calc
+   global l
+   l=dict()
+   k=k_calc(RH)
+   for chiave in k:
+      ij=chiave[0:2]
+      l[ij]=l.get(ij,0)+k[chiave]*(k[chiave]-1)//2
+
+def den(rh,i,j): #uses trovam, Lambda_calc (cosa fa?)
+   global l, IntervalMode
+   d1=1
+   if IntervalMode=='3':
+      d1='('
+   for k in range(m[i+1]+1):
+      if k!=j:
+         if IntervalMode=='3':
+            d1+=str(l[(i+1,k)]-l[(i+1,j)])+'*'
+         else:
+            d1=d1*(l[(i+1,k)]-l[(i+1,j)])
+   if IntervalMode=='3':
+      if d1=='(':
+         den='1'
+      else:
+         d1=d1[:len(d1)-1]
+         d1+=')'
+         den='(1/'+d1+')'
+   else:
+      den=1/d1
+   return den
+   
+def num(rh,i,j):
+   global l, IntervalMode
+   if IntervalMode=='3':
+      num='Exp['+str(-l[(i+1,j)])
+   else:
+      num=math.exp(-l[(i+1,j)])
+   return num
 
 def probab(ST,GT,RH): #Input: ST, GT and a RH. Output: P(G and RH|ST). Uses trovam, vall
    global l, timeDict, NumSpec, InputFormat, IntervalMode
-   calcoLambda(RH)
+   Lambda_calc(RH)
    P=dict()
-   m=trovam(RH)
    P[NumSpec-1]=1#it is necessarily so
    nums=list(range(NumSpec-1))
    if InputFormat=='1' and IntervalMode=='3':
@@ -285,84 +344,6 @@ def probab(ST,GT,RH): #Input: ST, GT and a RH. Output: P(G and RH|ST). Uses trov
             break
       P[0]=P[1]*2**(m[1])/(math.factorial(m[1]+1)*math.factorial(m[1]))
    return(P[0])
-
-def den(rh,i,j): #uses trovam, calcoLambda
-   global l, IntervalMode
-   m=trovam(rh)
-   d1=1
-   if IntervalMode=='3':
-      d1='('
-   for k in range(m[i+1]+1):
-      if k!=j:
-         if IntervalMode=='3':
-            d1+=str(l[(i+1,k)]-l[(i+1,j)])+'*'
-         else:
-            d1=d1*(l[(i+1,k)]-l[(i+1,j)])
-   if IntervalMode=='3':
-      if d1=='(':
-         den='1'
-      else:
-         d1=d1[:len(d1)-1]
-         d1+=')'
-         den='(1/'+d1+')'
-   else:
-      den=1/d1
-   return den
-
-def num(rh,i,j):
-   global l, IntervalMode
-   if IntervalMode=='3':
-      num='Exp['+str(-l[(i+1,j)])
-   else:
-      num=math.exp(-l[(i+1,j)])
-   return num
-
-def trovam(RH): #Output: a dictionary of m, where m[i] is the number of nodes of the gene tree in the i-th interval of the species tree
-   m=dict()
-   for n in range(len(RH)+1):
-      m[n]=RH.count(n)
-   return m
-
-def calcoLambda(RH): #Input: a dictionary of k[ijz]. Output: a dictionary of lambda(i,j). Uses valori, binomiale
-   global l
-   l=dict()
-   k=valori(RH)
-   for chiave in k:
-      ij=chiave[0:2]
-      l[ij]=l.get(ij,0)+binomiale(k[chiave],2)
-
-def binomiale(n,k): #calculates the binomial n over k
-   if n<k:
-      return 0
-   return math.factorial(n)//(math.factorial(k)*math.factorial(n-k))
-
-def valori(RH): #Output: a dictionary of k[ijz], it is useful to define m[NumSpec]=0 and k(NumSpec,0,z)=1
-   global NumSpec,Top,topology,nodes
-   Pos=[] #a matrix s.t. Pos[i][j] is the branch containing the (j+1)^th coalescence in tau_(i+1)
-   for i in range(NumSpec-1):
-      Pos.append([])
-      Pos[RH[i]-1].append(topology[nodes[i]][RH[i]-1])
-   m=[]
-   k=dict()
-   for i in range(NumSpec):
-      m.append(RH.count(i+1))
-      k[(NumSpec,0,i+1)]=1
-   for i in range(NumSpec-1):
-      for z in range (NumSpec-1-i):
-         k[(NumSpec-1-i,m[NumSpec-2-i],z+1)]=0
-      for j in range(m[NumSpec-2-i]+1):
-         if j==0:
-            for z in range(NumSpec-i):
-               k[(NumSpec-1-i,m[NumSpec-2-i],Top[NumSpec-2-i][z])]+=k[(NumSpec-i,0,z+1)]
-         else:
-            for z in range(NumSpec-1-i):
-               if z+1==Pos[NumSpec-2-i][m[NumSpec-2-i]-j]:
-                  k[(NumSpec-1-i,m[NumSpec-2-i]-j,z+1)]=k[(NumSpec-1-i,m[NumSpec-2-i]-j+1,z+1)]-1
-               else:
-                  k[(NumSpec-1-i,m[NumSpec-2-i]-j,z+1)]=k[(NumSpec-1-i,m[NumSpec-2-i]-j+1,z+1)]
-   for i in range(NumSpec):
-      del(k[(NumSpec,0,i+1)])
-   return k
 
 if OutputFormat=='1': #at the moment it works with standard format, symbolic must be implemented, newick corrected
    for st in dataST:

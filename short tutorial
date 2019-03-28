@@ -1,1 +1,20 @@
+Project developed by Guido Narduzzi and Pasquale Miglionico, undergraduate fellows of the Scuola Normale Superiore of Pisa and students of the Department of Biology of the University of Pisa, under the direction of Dr. Filippo Di Santo, University of Pisa, Department of Mathematics
 
+This calculates the probability under the multispecies coales-
+cent model of a ranked gene tree topology (RGT) on a ranked species tree (RST). It can also calculate the probabilities of all the ranked histories (RH) of the RGT.
+These probabilities are function of the time distance between the internal nodes (expressed in coalescent units).
+
+The program will ask the information it needs step by step during its execution, here we explain the options you have in more detail.
+
+_-Input-_
+You can submit STs in two different formats: 
+- the standard format, for example ((AB)2C)1, where the numbers indicate the rankings of the internal nodes (1 is the root).
+- the newick format, for example ((A:0.2,B:0.2):0.2,C:0.4), where after every node (leaves included) is indicated the lenght of the branch above it.
+GTs can be submitted only in the standard format.
+If you use the standard format for the ST, to have a numerical output you need to submit the lenghts of the intervals T[2],...,T[N-1] where T[i] is the time distance (in coalescent units) between the node of rank i-1 and the node of rank i and N is the number of leaves of the species tree.
+The input can be given typing a ST and a GT on the terminal or submitting two files in the .txt format (one for the species trees and one for the gene trees). If you submit files you can submit multiple trees at the same time, the program will calculate a probability for each couple GT-ST.
+
+_-Output-_
+You can choose between a numerical output or a polynomial output.
+A numerical output is simply the numerical value of the probability, it can be printed on the screen or written in a .txt file. 
+The polynomial output consist in a .nb file that can be processed by Mathematica giving an explicit formula of the probabilities in function of T[2],...,T[N-1] (as defined before).

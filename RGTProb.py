@@ -1,10 +1,3 @@
-# Project developed by Guido Narduzzi and Pasquale Miglionico, undergraduate fellows of the Scuola Normale Superiore of Pisa and students of 
-# the Department of Biology of the University of Pisa, under the direction of Dr. Filippo Disanto, University of Pisa, Department of Mathematics
-
-print('Welcome to RGTProb, the gene tree probability calculator. This tool will allow you to calculate Ranked Gene Tree probabilities conditioning on a species tree in multiple formats. You can modify the program as you like, but please always mention the original project. If you develop something interesting please let us know, so that we can add it to our software and distribute your content to other users.')
-
-# Main code
-
 from decimal import *
 from sys import exit
 import math

@@ -12,7 +12,7 @@ GTs can only be submitted in the standard format.
 If you use the standard format for the ST, to have a numerical output you need to submit the lenghts of the intervals T[2],...,T[N-1] in this order, 
 only separated by a comma, where T[i] is the time distance (in coalescent units) between the node of rank i-1 and the node of rank i and N is the number of leaves of the species tree.
 You can also use the Yule model option, that is, the value that the program assigns to T[i] is the expected value of T[i] under the multispecies coalescent as determined by Yule, with 
-a fitting parameter.
+a fitting parameter. In particular the value for T[i] will be (i*s)^{-1}, where s in R+ is the speciation rate the program asks you to submit.
 The input can be given typing a ST and a GT on the terminal or submitting two files in the .txt format (one for the species trees and one for the gene trees). Please note that the txt
 files need be written according to the example we give here, and can be named however you like. 
 If you submit files you can submit multiple trees at the same time, the program will calculate a probability for each couple GT-ST.

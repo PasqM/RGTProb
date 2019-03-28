@@ -1,7 +1,4 @@
-Project developed by Guido Narduzzi and Pasquale Miglionico, undergraduate fellows of the Scuola Normale Superiore of Pisa 
-and students of the Department of Biology of the University of Pisa, under the direction of Dr. Filippo Disanto, University of Pisa, Department of Mathematics
-
-This calculates the probability under the multispecies coalescent model of a ranked gene tree topology (RGT) on a ranked species tree (RST). 
+This script calculates the probability under the multispecies coalescent model of a ranked gene tree topology (RGT) on a ranked species tree (RST). 
 It can also calculate the probabilities of all the ranked histories (RH) of the RGT.
 These probabilities are function of the time distance between the internal nodes (expressed in coalescent units).
 

@@ -42,7 +42,6 @@ if InputFormat=='1':
    IntervalMode=input("Select the desired time interval mode: type 1 for Yule's model, 2 to insert time intervals manually or 3 for a polynomial output (readable by Wolfram Mathematica)\n")
    if IntervalMode=='1':
       SpecRatePar=input('Insert the parameter for the speciation rate\n')
-      Time_Yule(float(SpecRatePar))
    elif IntervalMode=='2':
       times_raw=input('Write the desired time intervals from T(2) to T(N-1) only separated by a comma\n')
       times=times_raw.split(',')
@@ -52,7 +51,8 @@ if InputFormat=='1':
       exit('ERROR: invalid input. Please restart the program.')
 
 def Time_Yule(par):# function that sets the time intervals according tu Yule's model
-   global timeDict, NumSpec
+   global timeDict
+   timeDict=dict()
    for i in range(2,NumSpec):
       timeDict[i]=1/(i*par)
    return timeDict
@@ -313,6 +313,8 @@ for st in dataST:
 	S_calc(st)
 	if InputFormat=='1':
 		specie=read(st,S_species)
+	if IntervalMode=='1':
+		Time_Yule(float(SpecRatePar))
 	elif InputFormat=='2':
 		specie=newick_analysis(st)
 	topocalc()
@@ -322,7 +324,7 @@ for st in dataST:
 			strTimeDict+=','+str(timeDict[i])
 			strTimeDict+=')'
 	if OutputFormat=='1':
-		print('Times= '+strTimeDict)
+		print('\nST = '+st+'\nTimes = '+strTimeDict+'\n')
 	if OutputFormat=='3':
 		if IntervalMode=='3':
 			filename=st+'_prob.nb'
@@ -345,7 +347,7 @@ for st in dataST:
 				filename=st+'_'+gt+'_prob.txt'
 			fout=open(filename, 'w')
 			if IntervalMode!='3':
-				fout.write('Times= '+strTimeDict+'\n\n')
+				fout.write('Times = '+strTimeDict+'\n\n')
 		if IntervalMode=='3':
 			pt=''
 		else:
@@ -357,18 +359,18 @@ for st in dataST:
 			if IntervalMode=='3':
 				pt+='+'+p
 				if OutputProbab=='2':
-					probs+='Print["P('+str(rh)+')=", Simplify['+str(p)+']]\n'
+					probs+='Print["P'+str(rh)+' = ", Simplify['+str(p)+']]\n'
 			else:
 				pt+=p
 				if OutputProbab=='2':
-					probs+=str(rh)+': '+str(p)+';\n'
+					probs+='P'+str(rh)+' = '+str(p)+'\n'
 		if IntervalMode=='3':
 			pt=pt[1:]
-			fout.write('Print["P('+gt+'|'+st+')= ", Simplify['+str(pt)+']]\n')
+			fout.write('Print["P('+gt+'|'+st+') = ", Simplify['+str(pt)+']]\n')
 		elif OutputFormat=='1':
-			print('P('+gt+'|'+st+')= '+str(pt)+'\n')
+			print('P('+gt+')= '+str(pt)+'\n')
 		else:
-			fout.write('P('+gt+'|'+st+')= '+str(pt))
+			fout.write('P('+gt+') = '+str(pt))
 		if OutputProbab=='2':
 			if OutputFormat=='1':
 				print(probs)

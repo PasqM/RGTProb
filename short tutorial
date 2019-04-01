@@ -1,5 +1,5 @@
-This script calculates the probability under the multispecies coalescent model of a ranked gene tree topology (RGT) on a ranked species tree (RST). 
-It can also calculate the probabilities of all the ranked histories (RH) of the RGT.
+This script calculates the probability under the multispecies coalescent model of a ranked gene tree topology (GT) on a ranked species tree (ST). 
+It can also calculate the probabilities of all the ranked histories (RH) of the GT.
 These probabilities are function of the time distance between the internal nodes (expressed in coalescent units).
 
 The program will ask the information it needs step by step during its execution, here we explain the options you have in more detail.
@@ -22,6 +22,6 @@ You can choose between a numerical output or a polynomial output. You can choose
 of the GT&rh conditioning on the ST.
 A numerical output is simply the numerical value of the probability, it can be printed on the screen or written in a .txt file. 
 The polynomial output consist in a .nb file that can be processed by Mathematica giving an explicit formula of the probabilities in function of T[2],...,T[N-1] (as defined before). 
-When givenu multiple trees the program can produce an output consisting of multiple files. It can be one file for each ST-GT couple, or one for each ST. In the former situation the 
+When given multiple trees the program can produce an output consisting of multiple files. It can be one file for each ST-GT couple, or one for each ST. In the former situation the 
 name of the file will only contain the name of the ST, in the second situation it will contain both the name of the ST and that of the GT, in this order.
  

@@ -7,8 +7,8 @@ The program will ask the information it needs step by step during its execution,
 _-Input-_
 You can submit STs in two different formats: 
 - the standard format, for example ((AB)2C)1, where the numbers indicate the rankings of the internal nodes (1 is the root).
-- the newick format, for example ((A:0.2,B:0.2):0.2,C:0.4), where the number after every node (leaves included) indicates the lenght of the branch above it.
-GTs can only be submitted in the standard format.
+- the newick format with branch lengths, for example ((A:0.2,B:0.2):0.2,C:0.4), where the number after every node (leaves included) indicates the lenght of the branch above it.
+GTs can only be submitted in the so called standard format.
 If you use the standard format for the ST, to have a numerical output you need to submit the lenghts of the intervals T[2],...,T[N-1] in this order, 
 only separated by a comma, where T[i] is the time distance (in coalescent units) between the node of rank i-1 and the node of rank i and N is the number of leaves of the species tree.
 You can also use the Yule model option, that is, the value that the program assigns to T[i] is the expected value of T[i] under the multispecies coalescent as determined by Yule, with 
